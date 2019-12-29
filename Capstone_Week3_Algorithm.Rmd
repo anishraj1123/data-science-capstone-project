@@ -1,0 +1,164 @@
+---
+title: "Capstone_Project_Week3_alogorithm"
+author: "Anish Raj"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    theme: cosmo
+    keep_md: no
+    df_print: paged
+  pdf_document:
+    toc: yes
+    df_print: kable
+    number_sections: false
+    fig_caption: yes
+    highlight: tango
+    dev: pdf
+  word_document:
+    toc: yes
+    df_print: paged
+    keep_md: no
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Step 1
+
+Load Required Library and extract data into variables
+
+```{r load-data, echo = TRUE}
+library(stringr)
+library(stringi)
+library(tm)
+library(wordcloud)
+library(ggplot2)
+library(kableExtra)
+
+setwd("C:/Users/samsung/Desktop/Coursera/Module10/data/final/en_US")
+allBlogs <- readLines("en_US.blogs.txt")
+allNews <- readLines("en_US.news.txt")
+allTwitter <- readLines("en_US.twitter.txt")
+summary(allBlogs)
+summary(allNews)
+summary(allTwitter)
+```
+
+## Step 2
+
+Defining function for Tokenization and word frequency calculation on Corpus
+
+```{r tokenization, echo = TRUE}
+tokenmaker <- function(x) {
+    corpus <- Corpus(VectorSource(x))
+    corpus <- tm_map(corpus, content_transformer(tolower))
+    corpus <- tm_map(corpus, removePunctuation)
+    corpus <- tm_map(corpus, stripWhitespace)
+    corpus <- tm_map(corpus, removeWords, stopwords("english"))
+    corpus <- tm_map(corpus, removeNumbers)
+    corpus <- tm_map(corpus, PlainTextDocument)
+    corpus <- Corpus(VectorSource(corpus))
+}  
+
+wordcounter <- function(x) {
+    dtm<-TermDocumentMatrix(x)
+    dtm_matrix <- as.matrix(dtm)
+    word_freq <- colSums(dtm_matrix)
+    word_freq <- sort(word_freq, decreasing = TRUE)
+    words <- names(word_freq)
+    return(list(words, word_freq))
+}  
+```
+## Defining Function 
+Defining the NextWordIs function which uses the above functions to create the list
+
+
+```{r extract-data, echo = TRUE}
+NextWordIs <- function(x,y){
+    BQuest<-grepl(x, allBlogs, ignore.case=TRUE)
+    head(BQuest)
+    BDocs<-allBlogs[BQuest]
+    head(BDocs)
+    textoachado<-'a'
+    NextWordIs<-'a'
+    i<-length(BDocs)
+    if (i>0)
+    {
+        for (i in 1:i)
+        {  textoachado[i]<- str_extract(BDocs[i], y)
+        NextWordIs[i]<- stri_extract_last_words(textoachado[i]) 
+        }
+    }
+    NQuest<-grepl(x, allNews, ignore.case=TRUE)
+    NDocs<-allNews[NQuest]
+    j=length(NDocs)
+    if (j>0)
+    {
+        for (j in 1:j)
+        {  textoachado[i+j]<- str_extract(NDocs[j], y)
+        NextWordIs[i+j]<- stri_extract_last_words(textoachado[i+j]) 
+        }
+    }
+    TQuest<-grepl(x, allTwitter, ignore.case=TRUE)
+    TDocs<-allTwitter[TQuest]
+    k=length(TDocs)
+    if (k>0)
+    {
+        for (k in 1:k)
+        {  textoachado[i+j+k]<- str_extract(TDocs[k], y)
+        NextWordIs[i+j+k]<- stri_extract_last_words(textoachado[i+j+k]) 
+        }
+    }
+    setwd("C:/Users/samsung/Desktop/Coursera/Module10/Week3")
+    bundle<-as.data.frame(NextWordIs, stringsAsFactors=FALSE)
+    blogs_token <- tokenmaker(bundle)
+    blogs_words <- wordcounter(blogs_token)
+    summary(nchar(bundle))
+    tdm_Blogs<-TermDocumentMatrix(blogs_token)
+    m_Blogs<-as.matrix(tdm_Blogs)
+    m_blogs<-sort(m_Blogs,decreasing=TRUE)
+    v_Blogs<-sort(rowSums(m_Blogs),decreasing=TRUE)
+    d_Blogs<-data.frame(word=names(v_Blogs),freq=v_Blogs)
+    newlist<-list(head(m_Blogs,10), head(v_Blogs,10))
+    return(newlist)
+}
+    resultado_01<-NextWordIs("a case of ", "([Aa]+ +[Cc]ase+ +[Oo]f+ +[^ ]+ )" )
+    resultado_01
+    
+    resultado_02<-NextWordIs("would mean the ", "([Ww]ould+ +[Mm]ean+ +[Tt]he+ +[^ ]+ )" )
+    resultado_02
+    
+    resultado_03<-NextWordIs("make me the ", "([Mm]ake+ +[Mm]e+ +[Tt]he+ +[^ ]+ )" )
+    resultado_03
+    
+    resultado_04<-NextWordIs("struggling ", "([Ss]truggling+ +[^ ]+ +[^ ]+ +[^ ]+ )" )  
+    resultado_04
+    
+    resultado_04a<-NextWordIs("struggling ", "([Ss]truggling+ +[^ ]+ +[^ ]+ )" )  
+    resultado_04a
+    
+    resultado_04b<-NextWordIs("struggling ", "([Ss]truggling+ +[^ ]+ )" )  
+    resultado_04b
+    
+    resultado_05<-NextWordIs("date at the ", "([Dd]ate+ +[Aa]t+ +[Tt]he+ +[^ ]+ )" )  
+    resultado_05
+    
+    resultado_06<-NextWordIs("be on my ", "([Bb]e+ +[Oo]n+ +[Mm]y+ +[^ ]+ )" )  
+    resultado_06
+    
+    resultado_07<-NextWordIs("quite some ", "([Qq]uite+ +[Ss]ome+ +[^ ]+ )" )  
+    resultado_07  
+
+    resultado_08<-NextWordIs("his little ", "([Hh]is+ +[Ll]ittle+ +[^ ]+ )" )  
+    resultado_08  
+
+    resultado_09<-NextWordIs("during the ", "([Dd]uring+ +[TT]he+ +[^ ]+ )" )  
+    resultado_09 
+    
+    resultado_10<-NextWordIs("must be ",  "([Mm]ust+ +[Bb]e+ +[^ ]+ )" )  
+    resultado_10  
+```
+
